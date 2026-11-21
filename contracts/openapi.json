@@ -5594,6 +5594,32 @@
             "type": "integer",
             "minimum": 1.0,
             "title": "Revision"
+          },
+          "requests_per_minute": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 2147483647.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requests Per Minute"
+          },
+          "max_concurrent": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 2147483647.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Concurrent"
           }
         },
         "additionalProperties": false,
@@ -5627,6 +5653,40 @@
           "revision": {
             "type": "integer",
             "title": "Revision"
+          },
+          "requests_per_minute": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requests Per Minute"
+          },
+          "max_concurrent": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Concurrent"
+          },
+          "default_requests_per_minute": {
+            "type": "integer",
+            "title": "Default Requests Per Minute"
+          },
+          "default_max_concurrent": {
+            "type": "integer",
+            "title": "Default Max Concurrent"
+          },
+          "global_max_concurrent": {
+            "type": "integer",
+            "title": "Global Max Concurrent"
           }
         },
         "type": "object",
@@ -5634,7 +5694,10 @@
           "workspace_id",
           "mode",
           "monthly_token_limit",
-          "revision"
+          "revision",
+          "default_requests_per_minute",
+          "default_max_concurrent",
+          "global_max_concurrent"
         ],
         "title": "QuotaView"
       },

@@ -1,4 +1,4 @@
--- AI 平台 PostgreSQL 初始化脚本 | 结构版本 0009_access_keys
+-- AI 平台 PostgreSQL 初始化脚本 | 结构版本 0010_member_rate_limits
 -- 修改记录（结构版本）
 -- 0001_identity              用户、个人工作区、会话认证与审计
 -- 0002_models                供应商连接、模型配置、Agent 及其版本
@@ -9,6 +9,7 @@
 -- 0007_shared_agents         成员可以在自己的工作区使用其他成员创建的智能体快照
 -- 0008_agent_releases        智能体可见性与不可变发布版本
 -- 0009_access_keys           成员级外部接入 Key、智能体白名单与 API 会话归属
+-- 0010_member_rate_limits    成员模型调用频率和并发上限
 -- 2026-11-21 合并原 01–03 初始化步骤，保留 0005 表结构和数据库版本记录。
 -- 2026-11-21 支持在图形客户端整份执行；本地建角色和数据库的命令移至 ../bootstrap-dev.psql。
 --
@@ -441,13 +442,19 @@ CREATE INDEX conversations_external
 
 ALTER TABLE app.runs ADD COLUMN access_key_id uuid REFERENCES app.access_keys(id);
 
+-- ============ 0010_member_rate_limits ============
+
+ALTER TABLE app.quota_policies
+    ADD COLUMN requests_per_minute integer CHECK (requests_per_minute > 0),
+    ADD COLUMN max_concurrent integer CHECK (max_concurrent > 0);
+
 -- ============ Alembic 版本记录 ============
 
 CREATE TABLE public.alembic_version (
     version_num varchar(32) NOT NULL,
     CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)
 );
-INSERT INTO public.alembic_version (version_num) VALUES ('0009_access_keys');
+INSERT INTO public.alembic_version (version_num) VALUES ('0010_member_rate_limits');
 
 -- ============ 图检查点（ai-platform init-checkpoints） ============
 

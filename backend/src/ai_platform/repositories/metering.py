@@ -11,16 +11,17 @@ def ensure_policy(conn, workspace):
 
 def get_policy(conn, workspace, *, lock=False):
     return conn.execute(
-        "SELECT workspace_id,mode,monthly_token_limit,revision FROM app.quota_policies WHERE workspace_id=%s"
+        "SELECT * FROM app.quota_policies WHERE workspace_id=%s"
         + (" FOR UPDATE" if lock else ""), (workspace,),
     ).fetchone()
 
 
-def update_policy(conn, workspace, limit, mode):
+def update_policy(conn, workspace, limit, mode, requests_per_minute, max_concurrent):
     return conn.execute("""
-        UPDATE app.quota_policies SET monthly_token_limit=%s,mode=%s,revision=revision+1,updated_at=now()
+        UPDATE app.quota_policies SET monthly_token_limit=%s,mode=%s,requests_per_minute=%s,max_concurrent=%s,
+            revision=revision+1,updated_at=now()
         WHERE workspace_id=%s RETURNING *
-    """, (limit, mode, workspace)).fetchone()
+    """, (limit, mode, requests_per_minute, max_concurrent, workspace)).fetchone()
 
 
 def ensure_bucket(conn, workspace, start, end, limit):

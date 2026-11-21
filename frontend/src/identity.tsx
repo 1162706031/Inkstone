@@ -244,7 +244,7 @@ export function Members() {
   });
   return (
     <PageBody>
-      <PageHeader title="成员管理" description="创建成员、发放一次性令牌、设置工作区额度"
+      <PageHeader title="成员管理" description="创建成员、发放一次性令牌、设置工作区额度与限流"
         extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => setCreating(true)}>创建成员</Button>} />
       <div className="stack">
         {issued && <Alert type="warning" showIcon closable={{ onClose: () => setIssued(undefined) }}
@@ -261,11 +261,12 @@ export function Members() {
               { title: "角色", render: (_, user) => user.role === "admin" ? <Tag color="purple">管理员</Tag> : <Tag>成员</Tag> },
               { title: "状态", render: (_, user) => <Badge {...statuses[user.status]} /> },
               { title: "创建时间", render: (_, user) => formatTime(user.created_at) },
-              { title: "操作", align: "right", render: (_, user) => user.role === "member" && (
+              { title: "操作", align: "right", render: (_, user) => (
                 <Space size={4} wrap>
+                  <Button size="small" onClick={() => setQuotaUser(user)}>额度与限流</Button>
+                  {user.role === "member" && <>
                   {user.status === "pending" && <Button size="small" onClick={() => change.mutate({ user, action: "activate" })}>重发激活令牌</Button>}
                   {user.status === "active" && <Button size="small" onClick={() => change.mutate({ user, action: "reset" })}>生成重置令牌</Button>}
-                  <Button size="small" onClick={() => setQuotaUser(user)}>额度</Button>
                   <Button size="small" disabled={change.isPending} danger={user.status !== "disabled"} onClick={() => change.mutate({ user, action: "toggle" })}>
                     {user.status === "disabled" ? "启用" : "禁用"}
                   </Button>
@@ -275,6 +276,7 @@ export function Members() {
                     onConfirm={() => change.mutate({ user, action: "delete" })}>
                     <Button size="small" danger disabled={change.isPending}>删除</Button>
                   </Popconfirm>
+                  </>}
                 </Space>
               ) },
             ]} />
@@ -293,9 +295,9 @@ export function Members() {
           await cache.invalidateQueries({ queryKey: ["admin-users"] });
         }} />
       </Modal>
-      <Modal open={Boolean(quotaUser)} title={quotaUser && `${quotaUser.display_name} · 工作区额度`}
+      <Modal open={Boolean(quotaUser)} title={quotaUser && `${quotaUser.display_name} · 额度与限流`}
         footer={null} onCancel={() => setQuotaUser(undefined)} destroyOnHidden>
-        {quotaUser && <QuotaEditor userId={quotaUser.id} />}
+        {quotaUser && <QuotaEditor key={quotaUser.id} userId={quotaUser.id} />}
       </Modal>
     </PageBody>
   );

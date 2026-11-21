@@ -408,16 +408,27 @@ export function QuotaEditor({ userId }: { userId: string }) {
   if (!query.data) return null;
   const policy = query.data;
   return <Form key={policy.revision} layout="vertical" initialValues={policy}
-    onFinish={(values: Omit<Contract["QuotaPatch"], "revision">) => save.mutate({ ...values, revision: policy.revision })}>
+    onFinish={(values: Omit<Contract["QuotaPatch"], "revision">) => save.mutate({ ...values, revision: policy.revision,
+      requests_per_minute: values.requests_per_minute ?? null, max_concurrent: values.max_concurrent ?? null })}>
     <Form.Item label="每月 Token 额度" name="monthly_token_limit" rules={[{ required: true }]}>
       <InputNumber min={0} max={10 ** 12} precision={0} style={{ width: "100%" }} />
     </Form.Item>
     <Form.Item label="额度模式" name="mode" extra="软预算超出后仍可调用；严格限制在额度不足时拒绝新调用">
       <Select options={[{ value: "soft", label: "软预算" }, { value: "strict", label: "严格限制" }]} />
     </Form.Item>
+    <Form.Item label="每分钟模型调用上限" name="requests_per_minute"
+      extra={`留空使用部署默认值（${policy.default_requests_per_minute} 次）。该用户的工作台和接入密钥共享此额度。`}
+      rules={[{ type: "integer", min: 1, max: 2147483647, message: "请输入大于零的整数" }]}>
+      <InputNumber min={1} max={2147483647} placeholder={`默认 ${policy.default_requests_per_minute}`} style={{ width: "100%" }} />
+    </Form.Item>
+    <Form.Item label="同时进行的模型调用上限" name="max_concurrent"
+      extra={`留空使用部署默认值（${policy.default_max_concurrent} 个）。全平台共享 ${policy.global_max_concurrent} 个并发名额。`}
+      rules={[{ type: "integer", min: 1, max: 2147483647, message: "请输入大于零的整数" }]}>
+      <InputNumber min={1} max={2147483647} placeholder={`默认 ${policy.default_max_concurrent}`} style={{ width: "100%" }} />
+    </Form.Item>
     {save.error && <Alert type="error" showIcon title={save.error.message} style={{ marginBottom: 16 }} />}
-    {save.isSuccess && <Alert type="success" showIcon title="额度已保存" style={{ marginBottom: 16 }} />}
-    <Button type="primary" htmlType="submit" loading={save.isPending}>保存额度</Button>
+    {save.isSuccess && <Alert type="success" showIcon title="额度与限流已保存" style={{ marginBottom: 16 }} />}
+    <Button type="primary" htmlType="submit" loading={save.isPending}>保存设置</Button>
   </Form>;
 }
 

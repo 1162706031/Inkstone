@@ -18,6 +18,7 @@ from ai_platform.services.common import audit, require, workspace
 from ai_platform.services.dispatch import aad, event
 from ai_platform.services.errors import Conflict, InvalidInput, UpstreamFailed
 from ai_platform.services.pagination import parse_cursor, to_page
+from ai_platform.settings import settings
 
 DISCOVERY_ERRORS = {
     "UPSTREAM_UNAUTHORIZED": "Provider rejected the API key",
@@ -190,8 +191,15 @@ def start_connection_test(conn, user, connection_id, model_id, idempotency_key, 
 
 # --- quotas and usage --------------------------------------------------------
 
+def quota_view(row):
+    config = settings()
+    return s.QuotaView(**row, default_requests_per_minute=config.model_workspace_requests_per_minute,
+                       default_max_concurrent=config.model_workspace_max_concurrent,
+                       global_max_concurrent=config.model_global_max_concurrent)
+
+
 def get_quota(conn, user_id):
-    return s.QuotaView.model_validate(metering.policy(conn, workspace(conn, user_id)))
+    return quota_view(metering.policy(conn, workspace(conn, user_id)))
 
 
 def update_quota(conn, actor, user_id, data, request_id):
@@ -199,11 +207,15 @@ def update_quota(conn, actor, user_id, data, request_id):
     prior = metering.policy(conn, owner, lock=True)
     if prior["revision"] != data.revision:
         raise Conflict("Quota revision conflict")
-    row = metering_repo.update_policy(conn, owner, data.monthly_token_limit, data.mode)
+    # Omitted overrides survive updates from older clients. An explicit null restores the deployment default.
+    changes = data.model_dump(exclude_unset=True)
+    row = metering_repo.update_policy(conn, owner, data.monthly_token_limit, data.mode,
+                                      changes.get("requests_per_minute", prior["requests_per_minute"]),
+                                      changes.get("max_concurrent", prior["max_concurrent"]))
     start, _ = metering.month_bounds()
     metering_repo.set_bucket_limit(conn, owner, start, data.monthly_token_limit)
     audit(conn, request_id, actor, "quota.updated", user_id, "user")
-    return s.QuotaView.model_validate(row)
+    return quota_view(row)
 
 
 def month_bounds(month):

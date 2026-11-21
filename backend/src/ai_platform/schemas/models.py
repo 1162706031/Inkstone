@@ -151,10 +151,15 @@ class RunView(BaseModel):
     last_event_sequence: int
 
 
+ModelCallLimit = Annotated[int, Field(strict=True, ge=1, le=2147483647)]
+
+
 class QuotaPatch(Input):
     monthly_token_limit: Annotated[int, Field(ge=0, le=10**12)]
     mode: Mode
     revision: Revision
+    requests_per_minute: ModelCallLimit | None = None
+    max_concurrent: ModelCallLimit | None = None
 
 
 class QuotaView(BaseModel):
@@ -162,6 +167,11 @@ class QuotaView(BaseModel):
     mode: Mode
     monthly_token_limit: int
     revision: int
+    requests_per_minute: int | None = None
+    max_concurrent: int | None = None
+    default_requests_per_minute: int
+    default_max_concurrent: int
+    global_max_concurrent: int
 
 
 class UsageSummary(BaseModel):

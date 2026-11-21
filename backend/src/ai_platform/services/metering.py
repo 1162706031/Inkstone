@@ -74,17 +74,19 @@ def reconcile(conn, attempt, usage, reason):
 def admission(conn, workspace):
     # The authoritative attempt rows restore Redis's rate and concurrency view before each decision.
     repo.lock_admission(conn)
-    return redis_admission(workspace, repo.admission_counts(conn, workspace))
+    return redis_admission(workspace, repo.admission_counts(conn, workspace), policy(conn, workspace))
 
 
-def redis_admission(workspace, counts):
+def redis_admission(workspace, counts, overrides=None):
     config = settings()
     url = config.redis_url
     if not url:
         return False, "REDIS_UNAVAILABLE"
     prefix = config.redis_prefix
     keys = (f"{prefix}:model:rate:{workspace}", f"{prefix}:model:active:{workspace}", f"{prefix}:model:active:global")
-    limits = (config.model_workspace_requests_per_minute, config.model_workspace_max_concurrent,
+    overrides = overrides or {}
+    limits = (overrides.get("requests_per_minute") or config.model_workspace_requests_per_minute,
+              overrides.get("max_concurrent") or config.model_workspace_max_concurrent,
               config.model_global_max_concurrent)
     allowed = redis_limits.model_admission(url, keys, (counts["recent"], counts["local"], counts["global"]), limits)
     return allowed, "MODEL_ADMISSION_LIMIT"

@@ -129,7 +129,7 @@ DELETION_ARCHIVE_PATH=C:/Users/<用户名>/AppData/Local/ai-platform-dev/archive
 
 **核对初始化结果**
 
-已初始化的库先查询版本。以库所有者从当前版本按顺序补齐 [0006 成员删除](sql/upgrades/0006_member_deletion.sql)、[0007 共享智能体](sql/upgrades/0007_shared_agents.sql) 和 [0008 智能体发布](sql/upgrades/0008_agent_releases.sql)。最终版本为 `0008_agent_releases`。升级前创建的智能体转为私人草稿，历史会话和快照保留。首次发布后可继续使用，创建人或管理员可以调整可见性。
+已初始化的库先查询版本。以库所有者从当前版本按顺序补齐 [0006 成员删除](sql/upgrades/0006_member_deletion.sql)、[0007 共享智能体](sql/upgrades/0007_shared_agents.sql)、[0008 智能体发布](sql/upgrades/0008_agent_releases.sql)、[0009 接入密钥](sql/upgrades/0009_access_keys.sql) 和 [0010 成员限流](sql/upgrades/0010_member_rate_limits.sql)。最终版本为 `0010_member_rate_limits`。升级前创建的智能体转为私人草稿，历史会话和快照保留。首次发布后可继续使用，创建人或管理员可以调整可见性。
 
 ```sql
 SELECT version_num FROM public.alembic_version;

@@ -81,7 +81,7 @@ docker image inspect --format '{{.Id}}' ai-platform-backend:$APP_VERSION ai-plat
 
 ```sh
 PGCLIENTENCODING=UTF8 psql -X -U ai_migrate -d ai_platform -v ON_ERROR_STOP=on -f sql/init.sql
-psql -X -U ai_migrate -d ai_platform -c 'SELECT version_num FROM public.alembic_version'  # 0008_agent_releases
+psql -X -U ai_migrate -d ai_platform -c 'SELECT version_num FROM public.alembic_version'  # 0010_member_rate_limits
 $C run --rm ops ai-platform grant-runtime --role ai_runtime
 $C run --rm ops ai-platform init-archive
 $C up -d --wait
@@ -96,7 +96,7 @@ curl -fsS https://ai.internal.example.com/api/v1/health/ready
 
 1. 构建新标签镜像，记录当前 `APP_VERSION` 作为回退目标。
 2. `pg_dump` 一次业务库（见第 7 节）。
-3. 以库所有者从现有版本按顺序补齐 [0006 成员删除](sql/upgrades/0006_member_deletion.sql)、[0007 共享智能体](sql/upgrades/0007_shared_agents.sql) 和 [0008 智能体发布](sql/upgrades/0008_agent_releases.sql)。已有智能体以私人草稿进入新版本，保留创建归属和历史会话。核对版本为 `0008_agent_releases` 后执行 `$C run --rm ops ai-platform grant-runtime --role ai_runtime`，再更新 `compose.env` 的 `APP_VERSION`。
+3. 以库所有者从现有版本按顺序补齐 [0006 成员删除](sql/upgrades/0006_member_deletion.sql)、[0007 共享智能体](sql/upgrades/0007_shared_agents.sql)、[0008 智能体发布](sql/upgrades/0008_agent_releases.sql)、[0009 接入密钥](sql/upgrades/0009_access_keys.sql) 和 [0010 成员限流](sql/upgrades/0010_member_rate_limits.sql)。核对版本为 `0010_member_rate_limits` 后执行 `$C run --rm ops ai-platform grant-runtime --role ai_runtime`，再更新 `compose.env` 的 `APP_VERSION`。已有成员继承部署中的限流默认值。
 4. `$C up -d --wait`，确认就绪接口和登录。
 
 升级会中断在途对话。Worker 被替换时，进行中的 Run 由新 Worker 接管或进入 `interrupted`，已提交文本保留。

@@ -95,7 +95,7 @@ def test_model_admission_environment_limits(monkeypatch):
         settings.cache_clear()
 
 
-@pytest.mark.parametrize("identity", ["0004_metering"], indirect=True)
+@pytest.mark.parametrize("identity", ["0010_member_rate_limits"], indirect=True)
 def test_provider_routing_and_accounting(identity, monkeypatch):
     monkeypatch.setenv("MODEL_WORKSPACE_REQUESTS_PER_MINUTE", "20")
     monkeypatch.setenv("MODEL_WORKSPACE_MAX_CONCURRENT", "2")
@@ -103,12 +103,17 @@ def test_provider_routing_and_accounting(identity, monkeypatch):
     settings.cache_clear()
     snapshots = []
     if not os.getenv("TEST_REDIS_URL"):
-        def admit(workspace, counts):
+        def admit(workspace, counts, overrides):
             snapshots.append(counts)
             return True, ""
         monkeypatch.setattr(metering, "redis_admission", admit)
 
-    with identity() as admin, identity() as member, fake_supplier() as first, fake_supplier() as second:
+    # Connection probes stop at the first token. Supply its usage in the same SSE frame.
+    def token_with_usage(stream, _payload):
+        stream.write(b'data: {"choices":[{"delta":{"content":"OK"}}],'
+                     b'"usage":{"prompt_tokens":3,"completion_tokens":4}}\n\n')
+
+    with identity() as admin, identity() as member, fake_supplier(token_with_usage) as first, fake_supplier() as second:
         monkeypatch.setenv("PRIVATE_MODEL_ALLOWLIST", f"{first[0]},{second[0]}")
         settings.cache_clear()
         enroll_admin(admin)
@@ -208,6 +213,15 @@ def test_provider_routing_and_accounting(identity, monkeypatch):
         updated = post(admin, f"/admin/users/{member_id}/quota",
                        {"revision": 1, "mode": "soft", "monthly_token_limit": 100}, method="PATCH")
         assert updated.status_code == 200 and updated.json()["workspace_id"] == member_workspace
+        path = f"/admin/users/{member_id}/quota"
+        quota = {"mode": "soft", "monthly_token_limit": 100}
+        custom = post(admin, path, {**quota, "revision": 2, "requests_per_minute": 1,
+                                    "max_concurrent": 3}, method="PATCH")
+        assert custom.status_code == 200 and admin.get("/api/v1" + path).json()["requests_per_minute"] == 1
+        assert post(admin, path, {**quota, "revision": 2, "max_concurrent": 5}, method="PATCH").status_code == 409
+        assert post(admin, path, {**quota, "revision": 3, "max_concurrent": 0}, method="PATCH").status_code == 422
+        preserved = post(admin, path, {**quota, "revision": 3}, method="PATCH").json()
+        assert (preserved["requests_per_minute"], preserved["max_concurrent"]) == (1, 3)
         attempts = []
         with connection() as conn:
             for _ in range(2):
@@ -259,14 +273,22 @@ def test_provider_routing_and_accounting(identity, monkeypatch):
             with Redis.from_url(redis_url) as redis, connection() as conn:
                 # Simulate empty Redis state without touching unrelated test keys.
                 redis.delete(*keys)
-                assert not metering.admission(conn, member_workspace)[0]
+                # Two active calls fit the member override of three and exceed the default of two.
+                assert metering.admission(conn, member_workspace)[0]
                 assert redis.get(keys[1]) == b"2"
+                reset = post(admin, path, {**quota, "revision": 4, "max_concurrent": None}, method="PATCH").json()
+                assert reset["max_concurrent"] is None and reset["requests_per_minute"] == 1
+                assert reset["default_max_concurrent"] == 2 and not metering.admission(conn, member_workspace)[0]
                 conn.execute("""
                     UPDATE app.model_call_attempts SET state='completed' WHERE workspace_id=%s
                 """, (member_workspace,))
                 redis.delete(*keys)
                 assert metering.admission(conn, member_workspace)[0]
                 assert redis.get(keys[1]) == b"0"
+                conn.execute("UPDATE app.model_call_attempts SET dispatched_at=now() WHERE id=%s", (winner,))
+                assert not metering.admission(conn, member_workspace)[0]
+                post(admin, path, {**quota, "revision": 5, "requests_per_minute": None}, method="PATCH").raise_for_status()
+                assert metering.admission(conn, member_workspace)[0]
             print("redis_recovery=in_flight_capacity_restored")
         admin_id = admin.get("/api/v1/auth/me").json()["user"]["id"]
         strict = post(admin, f"/admin/users/{admin_id}/quota",

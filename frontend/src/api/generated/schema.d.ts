@@ -1827,6 +1827,10 @@ export interface components {
             mode: "soft" | "strict";
             /** Revision */
             revision: number;
+            /** Requests Per Minute */
+            requests_per_minute?: number | null;
+            /** Max Concurrent */
+            max_concurrent?: number | null;
         };
         /** QuotaView */
         QuotaView: {
@@ -1844,6 +1848,16 @@ export interface components {
             monthly_token_limit: number;
             /** Revision */
             revision: number;
+            /** Requests Per Minute */
+            requests_per_minute?: number | null;
+            /** Max Concurrent */
+            max_concurrent?: number | null;
+            /** Default Requests Per Minute */
+            default_requests_per_minute: number;
+            /** Default Max Concurrent */
+            default_max_concurrent: number;
+            /** Global Max Concurrent */
+            global_max_concurrent: number;
         };
         /** RecentAuth */
         RecentAuth: {
