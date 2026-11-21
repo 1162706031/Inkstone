@@ -1,3 +1,11 @@
+> **重构开发入口（2026-11-19）**
+>
+> 开发 Agent 先读[分阶段实施方案](docs/design/ai-platform-implementation-plan.md#start-here)，确认项目目的、当前任务和验收条件，再按任务链接查阅[重构设计与技术契约](docs/design/ai-platform-refactor.md)。
+>
+> 新工程使用 `platform/`，与现有 `BE/`、`FE/my-chat-app/` 并存。下文介绍当前 AgentScope 客服系统。
+>
+> 新平台首次本地运行请先完成[PostgreSQL 与 Redis 部署](platform/infra/database-setup.md)，再按[平台启动说明](platform/README.md)启动 API、Worker 和前端。
+
 # 旭丰新材料 — AI 智能客服系统
 
 基于 [AgentScope](https://github.com/modelscope/agentscope) 框架构建的全栈 AI 智能客服系统，为黄石旭丰新材料科技有限公司（模具钢、高速钢等特钢产品）提供官网智能客服、产品导航、深度需求分析和多智能体协同服务。

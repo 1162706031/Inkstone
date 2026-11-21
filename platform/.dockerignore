@@ -1,0 +1,17 @@
+**/node_modules
+**/.npm-cache
+**/.npm-tool
+**/.node24
+**/.venv*
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/dist
+**/test-results
+**/playwright-report
+**/.env
+backend/.t01-pg
+infra/.test-archive
+infra/secrets
+infra/tls
+infra/*.env

@@ -1,0 +1,86 @@
+# Application stack only. PostgreSQL and Redis are independent instances reached over the private network.
+# Usage and secrets: see infra/deploy.md.
+name: ai-platform-p1
+
+x-backend: &backend
+  image: ${BACKEND_IMAGE:-ai-platform-backend:${APP_VERSION:?set APP_VERSION}}
+  build:
+    context: ..
+    dockerfile: infra/backend.Dockerfile
+  env_file: ${DEPLOY_ENV_FILE:-./deploy.env}
+  environment:
+    ENVIRONMENT: production
+    CREDENTIAL_KEY_FILE: /run/secrets/credential_key
+    DELETION_ARCHIVE_PATH: /var/lib/ai-platform/archive/deletions.sqlite3
+  secrets: [database_url, redis_url, credential_key]
+  volumes:
+    # Bind mount of the independent archive store (another host's NFS/SMB share or a separate disk).
+    # Not created automatically; startup fails when the directory is missing.
+    - type: bind
+      source: ${DELETION_ARCHIVE_DIR:?set DELETION_ARCHIVE_DIR}
+      target: /var/lib/ai-platform/archive
+      bind:
+        create_host_path: false
+  extra_hosts: ["host.docker.internal:host-gateway"]
+  read_only: true
+  tmpfs: [/tmp]
+  security_opt: ["no-new-privileges:true"]
+  cap_drop: [ALL]
+  restart: unless-stopped
+  logging:
+    driver: local
+    options: {max-size: 20m, max-file: "14"}
+
+services:
+  api:
+    <<: *backend
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8081/api/v1/health/ready', timeout=5)"]
+      interval: 15s
+      timeout: 8s
+      retries: 4
+      start_period: 10s
+
+  worker:
+    <<: *backend
+    command: ["python", "-m", "ai_platform.worker"]
+    depends_on:
+      api: {condition: service_healthy}
+
+  web:
+    image: ${WEB_IMAGE:-ai-platform-web:${APP_VERSION:?set APP_VERSION}}
+    build:
+      context: ..
+      dockerfile: infra/web.Dockerfile
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?set SITE_ADDRESS}
+      TLS_MODE: ${TLS_MODE:-internal}
+    ports:
+      - "${HTTPS_BIND:-0.0.0.0}:${HTTPS_PORT:-443}:443"
+    volumes:
+      - caddy_data:/data
+      - ${TLS_DIR:-./tls}:/etc/caddy/tls:ro
+    depends_on:
+      api: {condition: service_healthy}
+    restart: unless-stopped
+    logging:
+      driver: local
+      options: {max-size: 20m, max-file: "14"}
+
+  # One-shot operator commands: `docker compose run --rm ops ai-platform <command>`.
+  # Uses the migration account (database_url_migrate) instead of the runtime account.
+  ops:
+    <<: *backend
+    profiles: [ops]
+    secrets: [redis_url, credential_key, {source: database_url_migrate, target: database_url}]
+    restart: "no"
+    command: ["ai-platform", "--help"]
+
+secrets:
+  database_url: {file: "${SECRETS_DIR:-./secrets}/database_url"}
+  database_url_migrate: {file: "${SECRETS_DIR:-./secrets}/database_url_migrate"}
+  redis_url: {file: "${SECRETS_DIR:-./secrets}/redis_url"}
+  credential_key: {file: "${SECRETS_DIR:-./secrets}/credential_key"}
+
+volumes:
+  caddy_data:

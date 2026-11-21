@@ -1,0 +1,37 @@
+{
+	admin off
+}
+
+# SITE_ADDRESS is the HTTPS host, e.g. ai.internal.example.com. TLS_MODE selects the certificate source:
+# "internal" uses Caddy's private CA (rehearsal / intranet), or set a path pair via TLS_CERT and TLS_KEY.
+{$SITE_ADDRESS} {
+	tls {$TLS_MODE:internal}
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		Referrer-Policy same-origin
+		X-Frame-Options DENY
+		-Server
+	}
+
+	handle /api/* {
+		request_body {
+			max_size 64KB
+		}
+		reverse_proxy api:8081 {
+			# SSE: stream immediately and keep long-lived responses open.
+			flush_interval -1
+			transport http {
+				read_timeout 15m
+			}
+		}
+	}
+
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

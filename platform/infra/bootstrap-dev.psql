@@ -1,0 +1,19 @@
+-- 在 psql 中以实例管理员连接 postgres。业务表统一由 sql/init.sql 创建。
+\set ON_ERROR_STOP on
+\encoding UTF8
+
+SELECT NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ai_dev') AS create_role \gset
+\if :create_role
+BEGIN;
+CREATE ROLE ai_dev LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE;
+\password ai_dev
+COMMIT;
+\endif
+
+SELECT NOT EXISTS (SELECT FROM pg_database WHERE datname = 'ai_platform_dev') AS create_database \gset
+\if :create_database
+CREATE DATABASE ai_platform_dev OWNER ai_dev;
+\endif
+
+\connect ai_platform_dev ai_dev
+\ir sql/init.sql

@@ -1,0 +1,17 @@
+node_modules/
+.npm-cache/
+.npm-tool/
+.node24/
+.runtime/
+.venv-cache/
+.venv-reinstall/
+.t01-pg/
+.playwright/
+.pytest_cache/
+playwright-report/
+test-results/
+infra/.test-archive/
+infra/secrets/
+infra/tls/
+infra/deploy.env
+infra/compose.env

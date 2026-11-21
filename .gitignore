@@ -4,7 +4,9 @@ __pycache__/
 *.egg-info/
 dist/
 *.egg
-
+.ruff_cache
+.claude
+.refactor-backup
 # Environment
 .env
 .venv/
