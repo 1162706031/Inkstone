@@ -1,25 +1,17 @@
-# Python
-__pycache__/
-*.py[cod]
-*.egg-info/
-dist/
-*.egg
-.ruff_cache
-.claude
-.refactor-backup
-# Environment
-.env
-.venv/
-venv/
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Docker
+node_modules/
+.npm-cache/
+.npm-tool/
+.node24/
+.runtime/
+.venv-cache/
+.venv-reinstall/
+.t01-pg/
+.playwright/
+.pytest_cache/
+playwright-report/
+test-results/
+infra/.test-archive/
+infra/secrets/
+infra/tls/
+infra/deploy.env
+infra/compose.env
