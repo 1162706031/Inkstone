@@ -2,10 +2,12 @@ import { PlusOutlined, ReloadOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Alert, App, Button, Card, DatePicker, Empty, Form, Input, Modal, Popconfirm, Select, Space, Table, Tag,
-  Typography,
+  Tabs, Typography,
 } from "antd";
 import { useState } from "react";
 import { api, type Contract } from "./api/client";
+import { AccessExamples } from "./access-examples";
+import { Activity } from "./preview/access";
 import { all, ErrorAlert, formatTime, PageBody, PageHeader } from "./ui";
 
 /** Minimal shape of the value antd's DatePicker yields; avoids depending on dayjs directly. */
@@ -172,21 +174,13 @@ export function AccessKeys() {
               },
             ]} />
         </Card>
-        <Alert type="info" showIcon title="外部项目如何调用"
-          description={<div className="stack stack-tight">
-            <Typography.Text>
-              在服务端以 <code>Authorization: Bearer &lt;密钥&gt;</code> 依次请求下面三个接口。
-              <code>external_user_id</code> 由你的系统标识各个终端用户，平台按它区分会话。
-            </Typography.Text>
-            <Typography.Paragraph className="mono" style={{ marginBottom: 0 }} copyable>
-              {"POST /openapi/v1/agents/{agent_id}/conversations\n"}
-              {"POST /openapi/v1/agents/{agent_id}/runs\n"}
-              {"GET  /openapi/v1/runs/{run_id}/events"}
-            </Typography.Paragraph>
-            <Typography.Text type="secondary">
-              密钥必须保存在外部项目的服务端，不要下发到浏览器。创建 Run 需要带 <code>Idempotency-Key</code> 请求头。
-            </Typography.Text>
-          </div>} />
+        <Card title="应用接入">
+          <Tabs items={[
+            { key: "examples", label: "调用示例", children: <AccessExamples keys={list.data ?? []}
+              agents={bindableAgents(agents.data ?? [])} loading={list.isPending || agents.isPending} /> },
+            { key: "activity", label: "会话记录（示例）", children: <Activity /> },
+          ]} />
+        </Card>
       </div>
 
       <Modal open={creating} title="创建接入密钥" footer={null} onCancel={() => setCreating(false)} destroyOnHidden>

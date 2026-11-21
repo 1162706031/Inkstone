@@ -5,7 +5,6 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api, type Contract } from "../api/client";
 import { ErrorAlert, PageBody, PageHeader } from "../ui";
-import { AccessPanel } from "./access";
 import { kinds, type Kind, useCatalog } from "./catalog";
 import { PreviewNote } from "./components";
 
@@ -61,7 +60,7 @@ function Bindings({ agent }: { agent: string }) {
 }
 
 export function AgentDesign() {
-  const { id, section } = useParams();
+  const { id } = useParams();
   const agent = useQuery({ queryKey: ["agent", id], queryFn: () => api<Contract["AgentView"]>(`/agents/${id}`) });
   if (agent.error) return <PageBody><ErrorAlert error={agent.error} /></PageBody>;
   if (!agent.data) return <PageBody><Spin /></PageBody>;
@@ -69,8 +68,7 @@ export function AgentDesign() {
   return <PageBody wide><PageHeader title={agent.data.name} back={<Link to={base}><ArrowLeftOutlined /> 返回智能体配置</Link>} />
     <PreviewNote /><div className="preview-layout"><nav aria-label="智能体扩展配置" className="preview-nav">
       <strong>智能体配置</strong><Link to={base}>基本信息</Link>
-      <Link className={section === "bindings" ? "active" : ""} to={`${base}/preview/bindings`}>资源绑定</Link>
-      <Link className={section === "access" ? "active" : ""} to={`${base}/preview/access`}>访问接口</Link>
-    </nav><div className="preview-main">{section === "access" ? <AccessPanel /> : <Bindings agent={agent.data.id} />}</div></div>
+      <Link className="active" to={`${base}/preview/bindings`}>资源绑定</Link>
+    </nav><div className="preview-main"><Bindings agent={agent.data.id} /></div></div>
   </PageBody>;
 }

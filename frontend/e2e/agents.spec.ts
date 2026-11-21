@@ -43,6 +43,7 @@ test("member finds shared and editable agents and opens the P1 configuration", a
   await page.getByRole("radiogroup").getByText("全部智能体").click();
   await cards.first().click();
   await expect(page.getByRole("button", { name: "新建对话" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "访问接口" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "发布", exact: true })).toBeEnabled();
   await expect(page.getByRole("button", { name: "归档" })).toHaveCount(0);
   await page.getByLabel("名称", { exact: true }).fill("会议记录助手");

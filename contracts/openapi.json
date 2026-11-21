@@ -3593,6 +3593,18 @@
             ],
             "title": "Published Description"
           },
+          "published_model_definition_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published Model Definition Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -3676,6 +3688,7 @@
           "published_revision",
           "published_name",
           "published_description",
+          "published_model_definition_id",
           "name",
           "model_definition_id",
           "description",

@@ -161,8 +161,7 @@ export function AgentEditor() {
       <div className={readOnly || (id && !agent.data) ? "" : "agent-editor"}>
         {!readOnly && (!id || agent.data) && <nav className="section-links" aria-label="配置分区">
           <a href="#basic">基本信息</a><a href="#parameters">模型与参数</a><a href="#context">上下文</a>
-          {id && <><Link to={`/agents/${id}/preview/bindings`}>资源绑定</Link>
-            <Link to={`/agents/${id}/preview/access`}>访问接口</Link></>}
+          {id && <Link to={`/agents/${id}/preview/bindings`}>资源绑定</Link>}
         </nav>}
         <div className="stack">
           {fault && <Alert type="error" showIcon title={errorText(fault)} />}

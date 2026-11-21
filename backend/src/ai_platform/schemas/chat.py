@@ -62,6 +62,7 @@ class AgentView(BaseModel):
     published_revision: int | None
     published_name: str | None
     published_description: str | None
+    published_model_definition_id: UUID | None
     name: str
     model_definition_id: UUID
     description: str

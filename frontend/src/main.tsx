@@ -1,5 +1,5 @@
 import {
-  ApiOutlined, AppstoreOutlined, BarChartOutlined, CloudServerOutlined, DatabaseOutlined, KeyOutlined,
+  AppstoreOutlined, BarChartOutlined, CloudServerOutlined, DatabaseOutlined, KeyOutlined,
   LockOutlined, LogoutOutlined, MenuOutlined, MessageOutlined, RobotOutlined, TeamOutlined,
 } from "@ant-design/icons";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
@@ -21,7 +21,6 @@ import "./styles.css";
 
 const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { gcTime: 0 } } });
 const Components = lazy(() => import("./preview/components").then((m) => ({ default: m.Components })));
-const Integrations = lazy(() => import("./preview/access").then((m) => ({ default: m.Integrations })));
 const WorkflowPreview = lazy(() => import("./preview/design").then((m) => ({ default: m.WorkflowPreview })));
 const AgentDesign = lazy(() => import("./preview/design").then((m) => ({ default: m.AgentDesign })));
 
@@ -54,7 +53,6 @@ const destinations = [
   { to: "/agents", label: "智能体列表", icon: <RobotOutlined /> },
   { to: "/chat", label: "对话", icon: <MessageOutlined /> },
   { to: "/components", label: "能力组件", icon: <AppstoreOutlined /> },
-  { to: "/integrations", label: "应用接入", icon: <ApiOutlined /> },
   { to: "/access-keys", label: "接入密钥", icon: <KeyOutlined /> },
   { to: "/models", label: "模型目录", icon: <DatabaseOutlined /> },
   { to: "/usage", label: "用量", icon: <BarChartOutlined /> },
@@ -154,11 +152,12 @@ function Workspace() {
         <Route path="/agents" element={<AgentDirectory />} />
         <Route path="/agents/new" element={<AgentEditor key="new" />} />
         <Route path="/agents/:id" element={<AgentEditor />} />
-        <Route path="/agents/:id/preview/:section" element={<AgentDesign />} />
+        <Route path="/agents/:id/preview/bindings" element={<AgentDesign />} />
+        <Route path="/agents/:id/preview/access" element={<Navigate to="/access-keys" replace />} />
         <Route path="/components" element={<Navigate to="/components/knowledge" replace />} />
         <Route path="/components/workflows" element={<WorkflowPreview />} />
         <Route path="/components/:category" element={<Components owner={user.display_name} />} />
-        <Route path="/integrations" element={<Integrations />} />
+        <Route path="/integrations" element={<Navigate to="/access-keys" replace />} />
         <Route path="/chat" element={<Chat workspace={workspace} />} />
         <Route path="/chat/:id" element={<Chat workspace={workspace} />} />
         <Route path="/access-keys" element={<AccessKeys />} />

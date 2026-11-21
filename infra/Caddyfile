@@ -16,7 +16,8 @@
 		-Server
 	}
 
-	handle /api/* {
+	@api path /api/* /openapi/v1/*
+	handle @api {
 		request_body {
 			max_size 64KB
 		}

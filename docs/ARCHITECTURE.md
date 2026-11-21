@@ -226,7 +226,8 @@ frontend/src/
 ├── identity.tsx       登录、首次改密、MFA 绑定与验证、账号安全、成员管理
 ├── models.tsx         模型配置（连接、模型、发现与导入、连接测试）、模型目录、配额、用量
 ├── workbench.tsx      智能体列表与编辑、发布、对话页（会话列表、消息流、SSE 订阅）
-├── preview/           只在前端运行的原型页面：能力组件、应用接入、工作流、智能体能力绑定
+├── keys.tsx           接入密钥管理、按凭证和已发布模型生成调用示例
+├── preview/           只在前端运行的原型：能力组件、示例会话记录、工作流、智能体能力绑定
 └── styles.css
 ```
 
@@ -237,7 +238,7 @@ frontend/src/
 - **类型**来自 `Contract["SchemaName"]`。后端接口变化后，按顺序执行：在后端运行 `ai-platform export-openapi`，在前端运行 `npm run api:generate`，最后运行 `npm run typecheck`。
 - **路由与权限**：`Workspace` 组件先请求 `/auth/me`，返回 401 时显示登录页。`/admin/*` 路由在前端检查管理员角色，真正的权限校验仍由后端完成。
 - **对话流**：`subscribe()` 用 `fetch` 读取 SSE 流并手动解析帧，丢弃编号不大于当前游标的事件；`applyMessageEvent()` 把 `message.delta` 和 `message.snapshot` 合并到消息列表。
-- **预览页面**：`preview/` 下的页面数据是写死在前端的示例，状态保存在 `PreviewProvider` 中，刷新页面后丢失，也不调用后端。它们用于展示规划中的知识库、数据源、MCP、Skill 和应用接入功能。
+- **预览页面**：`preview/` 下的示例数据用于展示知识库、数据源、MCP、Skill 和应用会话记录。
 
 ### 5.3 页面
 
@@ -251,7 +252,8 @@ frontend/src/
 | `/settings/security` | 改密、MFA、退出其他会话 | 成员 |
 | `/admin/models`、`/admin/models/:id` | 模型连接与模型配置 | 管理员 |
 | `/admin/users` | 成员与配额管理 | 管理员 |
-| `/components/*`、`/integrations`、`/agents/:id/preview/:section` | 预览原型 | 成员 |
+| `/access-keys` | 接入密钥与应用调用示例（旧入口 `/integrations` 跳转至此） | 成员 |
+| `/components/*`、`/agents/:id/preview/bindings` | 预览原型 | 成员 |
 
 开发时 Vite 运行在 `127.0.0.1:5174`，把 `/api` 代理到 `127.0.0.1:8081`。生产环境由 Caddy 提供 `dist/` 静态文件，未命中的路径回退到 `index.html`。
 

@@ -1127,6 +1127,8 @@ export interface components {
             published_name: string | null;
             /** Published Description */
             published_description: string | null;
+            /** Published Model Definition Id */
+            published_model_definition_id: string | null;
             /** Name */
             name: string;
             /**

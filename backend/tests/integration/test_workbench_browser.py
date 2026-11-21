@@ -53,7 +53,8 @@ def test_live_browser(graph_db, monkeypatch, tmp_path):
     routes = [Mount("/assets", app=StaticFiles(directory=dist / "assets"))]
     routes.extend(
         Route(path, index) for path in ("/", "/login", "/settings/security", "/agents", "/agents/{id}",
-                                        "/chat", "/chat/{id}", "/usage")
+                                        "/chat", "/chat/{id}", "/usage", "/access-keys", "/integrations",
+                                        "/agents/{id}/preview/access")
     )
     routes.append(Mount("/", app=app))
     archive = tmp_path / "volume" / "markers.sqlite3"

@@ -9,7 +9,8 @@ AGENT_CATALOG = """
         creator.id=viewer.id AS is_creator, (viewer.admin OR creator.id=viewer.id) AS can_manage,
         a.status='active' AS can_edit, released.number AS published_version,
         v.revision AS published_revision, v.config->>'name' AS published_name,
-        v.config->>'description' AS published_description
+        v.config->>'description' AS published_description,
+        v.config->>'model_definition_id' AS published_model_definition_id
     FROM app.agents a JOIN app.workspaces aw ON aw.id=a.workspace_id
     JOIN app.users creator ON creator.id=aw.owner_user_id
     CROSS JOIN (SELECT %s::uuid AS id, %s::boolean AS admin) viewer
