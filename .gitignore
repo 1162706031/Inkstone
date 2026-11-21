@@ -15,3 +15,6 @@ infra/secrets/
 infra/tls/
 infra/deploy.env
 infra/compose.env
+.claude/
+.refactor-backup/
+.ruff_cache/

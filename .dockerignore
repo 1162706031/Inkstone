@@ -15,3 +15,6 @@ infra/.test-archive
 infra/secrets
 infra/tls
 infra/*.env
+.claude/
+.refactor-backup/
+.ruff_cache/
