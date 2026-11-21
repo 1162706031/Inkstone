@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     redis_user: str = "default"
     redis_password: SecretStr | None = None
     redis_prefix: str = "ai"
+    model_workspace_requests_per_minute: int = Field(default=20, ge=1)
+    model_workspace_max_concurrent: int = Field(default=2, ge=1)
+    model_global_max_concurrent: int = Field(default=4, ge=1)
     app_origin: str = "http://127.0.0.1:5174"
     credential_key_file: Path | None = None
     credential_key_version: str = "v1"

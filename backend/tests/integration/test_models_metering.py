@@ -75,8 +75,32 @@ def accept(client, provider_id, model, key=None):
                                 "Idempotency-Key": key or str(uuid4())})
 
 
+def test_model_admission_environment_limits(monkeypatch):
+    redis_url = os.getenv("TEST_REDIS_URL")
+    if not redis_url:
+        pytest.skip("TEST_REDIS_URL is required")
+    monkeypatch.setenv("REDIS_URL", redis_url)
+    monkeypatch.setenv("REDIS_PREFIX", f"ai-test-{uuid4().hex}")
+    monkeypatch.setenv("MODEL_WORKSPACE_REQUESTS_PER_MINUTE", "3")
+    monkeypatch.setenv("MODEL_WORKSPACE_MAX_CONCURRENT", "4")
+    monkeypatch.setenv("MODEL_GLOBAL_MAX_CONCURRENT", "6")
+    settings.cache_clear()
+    try:
+        for recent, local, global_count, expected in [
+            (2, 3, 5, True), (3, 0, 0, False), (0, 4, 4, False), (0, 0, 6, False),
+        ]:
+            counts = {"recent": recent, "local": local, "global": global_count}
+            assert metering.redis_admission("example", counts)[0] is expected
+    finally:
+        settings.cache_clear()
+
+
 @pytest.mark.parametrize("identity", ["0004_metering"], indirect=True)
 def test_provider_routing_and_accounting(identity, monkeypatch):
+    monkeypatch.setenv("MODEL_WORKSPACE_REQUESTS_PER_MINUTE", "20")
+    monkeypatch.setenv("MODEL_WORKSPACE_MAX_CONCURRENT", "2")
+    monkeypatch.setenv("MODEL_GLOBAL_MAX_CONCURRENT", "4")
+    settings.cache_clear()
     snapshots = []
     if not os.getenv("TEST_REDIS_URL"):
         def admit(workspace, counts):

@@ -183,7 +183,7 @@ src/ai_platform/
 **计量与配额**
 - 配额按工作区和自然月（Asia/Shanghai 时区）划分，有 `soft` 和 `strict` 两种模式。
 - 派发调用前按估算的 token 数预留配额，调用结束后按供应商返回的 usage 结算。供应商没有返回 usage 时，预留状态记为 `uncertain`，之后由运维通过 `ai-platform reconcile-attempt` 人工对账。
-- 准入限制：每个工作区每分钟最多 20 次调用、同时最多 2 个进行中的调用，全局同时最多 4 个。这三个阈值硬编码在 [clients/redis_limits.py](../backend/src/ai_platform/clients/redis_limits.py) 的 Lua 脚本中，不是配置项。计数从 PostgreSQL 统计后写入 Redis。
+- 模型调用默认每个工作区每分钟最多 20 次、同时最多 2 次，全平台同时最多 4 次。后端从 PostgreSQL 统计用量，Redis 根据部署配置检查这三项上限。变量见[环境配置示例](../infra/.env.example)。
 
 **事件流**
 - `run_events` 按运行递增编号。SSE 的事件 ID 格式为 `{run_id}:{sequence}`，断线后用 `Last-Event-ID` 或 `?after=` 从断点续读。

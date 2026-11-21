@@ -25,7 +25,9 @@ ADMISSION = """
 redis.call('SET', KEYS[1], ARGV[1], 'EX', 180)
 redis.call('SET', KEYS[2], ARGV[2], 'EX', 180)
 redis.call('SET', KEYS[3], ARGV[3], 'EX', 180)
-return tonumber(ARGV[1]) < 20 and tonumber(ARGV[2]) < 2 and tonumber(ARGV[3]) < 4 and 1 or 0
+return tonumber(ARGV[1]) < tonumber(ARGV[4])
+   and tonumber(ARGV[2]) < tonumber(ARGV[5])
+   and tonumber(ARGV[3]) < tonumber(ARGV[6]) and 1 or 0
 """
 
 
@@ -45,9 +47,9 @@ def release_auth_attempt(url, keys, expiries):
         redis.eval(AUTH_RELEASE, 2, *keys, *expiries)
 
 
-def model_admission(url, keys, counts):
+def model_admission(url, keys, counts, limits):
     with _client(url) as redis:
-        return bool(redis.eval(ADMISSION, 3, *keys, *counts))
+        return bool(redis.eval(ADMISSION, 3, *keys, *counts, *limits))
 
 
 def ping(url):

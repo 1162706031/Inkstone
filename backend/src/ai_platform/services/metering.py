@@ -84,5 +84,7 @@ def redis_admission(workspace, counts):
         return False, "REDIS_UNAVAILABLE"
     prefix = config.redis_prefix
     keys = (f"{prefix}:model:rate:{workspace}", f"{prefix}:model:active:{workspace}", f"{prefix}:model:active:global")
-    allowed = redis_limits.model_admission(url, keys, (counts["recent"], counts["local"], counts["global"]))
+    limits = (config.model_workspace_requests_per_minute, config.model_workspace_max_concurrent,
+              config.model_global_max_concurrent)
+    allowed = redis_limits.model_admission(url, keys, (counts["recent"], counts["local"], counts["global"]), limits)
     return allowed, "MODEL_ADMISSION_LIMIT"

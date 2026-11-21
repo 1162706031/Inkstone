@@ -70,7 +70,7 @@ def test_external_chat_and_isolation(graph_db, monkeypatch):
         assert len(requests) == before + 1, "the external run must reach the supplier exactly once"
 
         detail = call(outsider, f"/runs/{run_id}", token, method="GET").json()
-        assert detail["status"] == "succeeded", detail
+        assert detail["status"] == "completed", detail
         assert detail["output_message"]["content"][0]["text"] == "OK"
 
         # The conversation and its usage belong to the key owner's workspace, visible in the workbench.
