@@ -1,4 +1,4 @@
--- AI 平台 PostgreSQL 初始化脚本 | 结构版本 0008_agent_releases
+-- AI 平台 PostgreSQL 初始化脚本 | 结构版本 0009_access_keys
 -- 修改记录（结构版本）
 -- 0001_identity              用户、个人工作区、会话认证与审计
 -- 0002_models                供应商连接、模型配置、Agent 及其版本
@@ -7,6 +7,8 @@
 -- 0005_conversation_deletion 会话删除标记及待归档索引
 -- 0006_member_deletion       成员删除后释放登录名，保留工作区历史与审计记录
 -- 0007_shared_agents         成员可以在自己的工作区使用其他成员创建的智能体快照
+-- 0008_agent_releases        智能体可见性与不可变发布版本
+-- 0009_access_keys           成员级外部接入 Key、智能体白名单与 API 会话归属
 -- 2026-11-21 合并原 01–03 初始化步骤，保留 0005 表结构和数据库版本记录。
 -- 2026-11-21 支持在图形客户端整份执行；本地建角色和数据库的命令移至 ../bootstrap-dev.psql。
 --
@@ -397,13 +399,55 @@ CREATE TABLE app.agent_releases (
     FOREIGN KEY (agent_id,version_id) REFERENCES app.agent_versions(agent_id,id)
 );
 
+-- ============ 0009_access_keys ============
+
+-- Key 绑定创建者与显式智能体白名单，用量归创建者的个人工作区。
+CREATE TABLE app.access_keys (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    workspace_id uuid NOT NULL,
+    creator_user_id uuid NOT NULL REFERENCES app.users(id),
+    name text NOT NULL,
+    key_prefix text NOT NULL,
+    key_hash bytea NOT NULL UNIQUE,
+    status text NOT NULL CHECK (status IN ('active','revoked')),
+    expires_at timestamptz,
+    last_used_at timestamptz,
+    revision integer NOT NULL DEFAULT 1 CHECK (revision > 0),
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    UNIQUE(workspace_id,id),
+    FOREIGN KEY(workspace_id,creator_user_id) REFERENCES app.workspaces(id,owner_user_id)
+);
+CREATE INDEX access_keys_owner ON app.access_keys(workspace_id,created_at DESC,id);
+
+-- 白名单是创建时的显式快照，不随创建者可见范围变化而扩大。
+CREATE TABLE app.access_key_agents (
+    access_key_id uuid NOT NULL REFERENCES app.access_keys(id) ON DELETE CASCADE,
+    agent_id uuid NOT NULL REFERENCES app.agents(id),
+    PRIMARY KEY (access_key_id,agent_id)
+);
+
+-- access_key_id 为 NULL 表示会话来自工作台，非 NULL 表示来自外部 API。
+ALTER TABLE app.conversations
+    ADD COLUMN access_key_id uuid REFERENCES app.access_keys(id),
+    ADD COLUMN external_user_id text,
+    ADD CONSTRAINT conversations_external_pair
+        CHECK ((access_key_id IS NULL) = (external_user_id IS NULL)),
+    ADD CONSTRAINT conversations_external_user_length
+        CHECK (external_user_id IS NULL OR char_length(external_user_id) BETWEEN 1 AND 200);
+CREATE INDEX conversations_external
+    ON app.conversations(access_key_id,external_user_id,created_at DESC,id)
+    WHERE access_key_id IS NOT NULL;
+
+ALTER TABLE app.runs ADD COLUMN access_key_id uuid REFERENCES app.access_keys(id);
+
 -- ============ Alembic 版本记录 ============
 
 CREATE TABLE public.alembic_version (
     version_num varchar(32) NOT NULL,
     CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)
 );
-INSERT INTO public.alembic_version (version_num) VALUES ('0008_agent_releases');
+INSERT INTO public.alembic_version (version_num) VALUES ('0009_access_keys');
 
 -- ============ 图检查点（ai-platform init-checkpoints） ============
 

@@ -19,3 +19,5 @@ infra/compose.env
 .claude/
 .refactor-backup/
 .ruff_cache/
+.pycache
+__pycache__/

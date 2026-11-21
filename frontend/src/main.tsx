@@ -1,6 +1,6 @@
 import {
-  ApiOutlined, AppstoreOutlined, BarChartOutlined, CloudServerOutlined, DatabaseOutlined, LockOutlined, LogoutOutlined,
-  MenuOutlined, MessageOutlined, RobotOutlined, TeamOutlined,
+  ApiOutlined, AppstoreOutlined, BarChartOutlined, CloudServerOutlined, DatabaseOutlined, KeyOutlined,
+  LockOutlined, LogoutOutlined, MenuOutlined, MessageOutlined, RobotOutlined, TeamOutlined,
 } from "@ant-design/icons";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import {
@@ -13,6 +13,7 @@ import { BrowserRouter, Link, Navigate, NavLink, Route, Routes, useLocation, use
 import { api, ApiError, type Contract } from "./api/client";
 import { getHealth } from "./api/health";
 import { AccountSecurity, AuthFrame, Members, SignIn } from "./identity";
+import { AccessKeys } from "./keys";
 import { ConnectionDetail, Connections, ModelDirectory, Usage } from "./models";
 import { AgentDirectory, AgentEditor, Chat } from "./workbench";
 import { PreviewProvider } from "./preview/catalog";
@@ -54,6 +55,7 @@ const destinations = [
   { to: "/chat", label: "对话", icon: <MessageOutlined /> },
   { to: "/components", label: "能力组件", icon: <AppstoreOutlined /> },
   { to: "/integrations", label: "应用接入", icon: <ApiOutlined /> },
+  { to: "/access-keys", label: "接入密钥", icon: <KeyOutlined /> },
   { to: "/models", label: "模型目录", icon: <DatabaseOutlined /> },
   { to: "/usage", label: "用量", icon: <BarChartOutlined /> },
   { to: "/admin/models", label: "模型配置", icon: <CloudServerOutlined />, admin: true },
@@ -159,6 +161,7 @@ function Workspace() {
         <Route path="/integrations" element={<Integrations />} />
         <Route path="/chat" element={<Chat workspace={workspace} />} />
         <Route path="/chat/:id" element={<Chat workspace={workspace} />} />
+        <Route path="/access-keys" element={<AccessKeys />} />
         <Route path="/models" element={<ModelDirectory />} />
         <Route path="/usage" element={<Usage />} />
         <Route path="*" element={<Navigate to="/chat" replace />} />

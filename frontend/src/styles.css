@@ -43,6 +43,7 @@ body { background: var(--bg); }
 .page-title.ant-typography { margin: 0; }
 .page-buttons { margin-top: 16px; }
 .stack { display: flex; flex-direction: column; gap: 16px; }
+.stack-tight { gap: 6px; }
 @media (max-width: 767px) { .page { padding: 16px 14px 32px; } }
 
 /* ---------- Auth ---------- */
