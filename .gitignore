@@ -4,6 +4,7 @@ node_modules/
 .node24/
 .runtime/
 .venv-cache/
+.venv/
 .venv-reinstall/
 .t01-pg/
 .playwright/

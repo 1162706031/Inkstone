@@ -1,6 +1,6 @@
 # 内部 AI 平台
 
-代码结构、分层和关键机制见[项目框架](ARCHITECTURE.md)。
+代码结构、分层和关键机制见[项目框架](docs/ARCHITECTURE.md)，总体设计见[设计文档](docs/DESIGN.md)。
 
 后端 API 和 Worker 共用 `ai-platform` Python 包。前端通过 Vite 代理访问账号、模型目录、供应商管理和用量 API。Worker 领取管理员发起的连接测试，写入根任务状态、调用尝试和用量账本。
 
@@ -10,7 +10,7 @@
 
 - Python 3.12.16、uv 0.13.7、Node.js 24.22.3、npm 12.2.3。运行时版本见 `backend/.python-version` 和 `frontend/.node-version`。
 - 开发 PostgreSQL 使用 `ai_platform_dev` 和开发专用账号。部署时 `DATABASE_URL` 和 `CHECKPOINT_DATABASE_URL` 指向同库，`REDIS_URL` 指向开发独立 Redis。
-- 后端在 `platform/backend` 下读取 `.env`。参照 [配置示例](infra/.env.example) 注入连接配置及密钥文件路径。密钥文件应包含 32 个原始随机字节，由部署环境保管。首次启动需要 PostgreSQL 和 Redis，生产 `APP_ORIGIN` 必须为 HTTPS。
+- 后端在 `backend` 下读取 `.env`。参照 [配置示例](infra/.env.example) 注入连接配置及密钥文件路径。密钥文件应包含 32 个原始随机字节，由部署环境保管。首次启动需要 PostgreSQL 和 Redis，生产 `APP_ORIGIN` 必须为 HTTPS。
 - 恢复探针只读取进程环境中的 `TEST_DATABASE_URL`，并核对实际数据库为 `ai_platform_test`。测试账号需要 `CONNECT` 和 `CREATE` 数据库权限，以便建两个随机命名的探针 schema。探针结束时删除这两个 schema。
 - 隔离 Redis 使用 `TEST_REDIS_URL`。测试和开发使用独立实例及凭据。远程实例的 DSN 按实例要求启用 TLS 并校验证书。凭据通过环境注入。
 
@@ -18,7 +18,7 @@
 
 首次生成锁文件时在后端运行 `uv lock`，在前端运行 `npm install`。后续使用锁文件安装。
 
-从 `platform/backend` 运行：
+从 `backend` 运行：
 
 ```sh
 uv sync --locked --group dev
@@ -29,13 +29,13 @@ psql -X -h 127.0.0.1 -p 25432 -U postgres -d postgres -f ../infra/bootstrap-dev.
 uv run --locked uvicorn ai_platform.api.main:app --host 127.0.0.1 --port 8081
 ```
 
-另开终端在 `platform/backend` 运行 Worker，使用 Ctrl+C 退出：
+另开终端在 `backend` 运行 Worker，使用 Ctrl+C 退出：
 
 ```sh
 uv run --locked python -m ai_platform.worker
 ```
 
-从 `platform/frontend` 运行：
+从 `frontend` 运行：
 
 ```sh
 npm ci
@@ -55,7 +55,7 @@ npm run dev
 
 ## 行为探针
 
-从 `platform/backend` 运行：
+从 `backend` 运行：
 
 ```sh
 uv run --locked pytest -q -rs tests/unit tests/contract
@@ -84,14 +84,14 @@ uv run --locked python -c "import os, redis; r = redis.Redis.from_url(os.environ
 
 公开智能体允许所有已登录成员查看、编辑、发布和使用。私人智能体仅创建人和管理员可见。创建归属始终保留，可见性和归档由创建人或管理员管理。可见性在保存时生效，改为私人后，其他成员仍可在 `/chat` 查看自己的历史，但无法继续调用该智能体。
 
-API 与 Worker 的 `DELETION_ARCHIVE_PATH` 指向同一个独立持久卷上的 SQLite 文件绝对路径，父目录应已创建并允许写入。测试可使用 `platform/infra/.test-archive/deletions.sqlite3` 的绝对路径。SQLite 以 FULL 同步提交，Worker 每分钟重试待确认标记，随后清理会话正文。该文件应独立于业务库及图的备份和还原。
+API 与 Worker 的 `DELETION_ARCHIVE_PATH` 指向同一个独立持久卷上的 SQLite 文件绝对路径，父目录应已创建并允许写入。测试可使用 `infra/.test-archive/deletions.sqlite3` 的绝对路径。SQLite 以 FULL 同步提交，Worker 每分钟重试待确认标记，随后清理会话正文。该文件应独立于业务库及图的备份和还原。
 
 在空白专用 `ai_platform_test`、隔离 Redis 和已构建前端上运行以下验收。设置 `TEST_DELETION_ARCHIVE_PATH` 可将测试中的已确认标记持久保留供窗口 3 复核。浏览器夹具使用本地动态端口、真实 API/Worker 和可控供应商。
 
 ```sh
-# platform/frontend
+# frontend
 npm run build
-# platform/backend
+# backend
 WORKBENCH_BROWSER=1 uv run --locked pytest -q -rs -s tests
 ```
 
@@ -106,4 +106,3 @@ RUN_PROVIDER_TESTS=1 PROVIDER_TEST_BASE_URL=https://.../v1 PROVIDER_TEST_MODEL=.
 
 应用 Compose、HTTPS、secret 注入、备份恢复、Redis 重建、删除归档重放和回退步骤见[部署手册](infra/deploy.md)。
 
-验收记录见 [实施方案](../docs/design/ai-platform-implementation-plan.md#progress)。

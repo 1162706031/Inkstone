@@ -1,6 +1,6 @@
 # 本地部署 PostgreSQL 和 Redis
 
-这份指南用于在 Windows 开发机上从零启动 `platform/` 的数据服务。PostgreSQL 17 在 Windows 运行，Redis 7.4 在 WSL Ubuntu 运行，API 和 Worker 在 Windows 运行。两项服务均绑定回环地址，数据保存在重启后可以复用的目录中。
+这份指南用于在 Windows 开发机上从零启动平台的数据服务。PostgreSQL 17 在 Windows 运行，Redis 7.4 在 WSL Ubuntu 运行，API 和 Worker 在 Windows 运行。两项服务均绑定回环地址，数据保存在重启后可以复用的目录中。
 
 | 用途 | PostgreSQL | Redis |
 | --- | --- | --- |
@@ -85,7 +85,7 @@ redis-server "$redis_dir/redis.conf"
 回到 **Windows PowerShell**，从仓库根目录进入后端。下面的命令只在文件缺失时创建开发配置和 32 字节加密密钥。后续启动继续使用同一密钥，以便解密已保存的供应商凭据。
 
 ```powershell
-Set-Location platform/backend
+Set-Location backend
 uv sync --locked --group dev
 $devRoot = Join-Path $env:LOCALAPPDATA 'ai-platform-dev'
 $archiveDir = Join-Path $devRoot 'archive'
@@ -100,7 +100,7 @@ Write-Output $keyPath
 Write-Output (Join-Path $archiveDir 'deletions.sqlite3')
 ```
 
-编辑 `platform/backend/.env`，用开发角色 `ai_dev` 的密码和第 2 节设置的 Redis 密码和上一步输出的绝对路径替换占位符。Windows 文件路径可用正斜杠。密码包含 `@`、`:`、`/`、`#` 或 `%` 时，须对 URL 中的密码部分做百分号编码。API 与 Worker 都从 `platform/backend` 启动并读取这份配置。
+编辑 `backend/.env`，用开发角色 `ai_dev` 的密码和第 2 节设置的 Redis 密码和上一步输出的绝对路径替换占位符。Windows 文件路径可用正斜杠。密码包含 `@`、`:`、`/`、`#` 或 `%` 时，须对 URL 中的密码部分做百分号编码。API 与 Worker 都从 `backend` 启动并读取这份配置。
 
 ```dotenv
 ENVIRONMENT=development
@@ -121,7 +121,7 @@ DELETION_ARCHIVE_PATH=C:/Users/<用户名>/AppData/Local/ai-platform-dev/archive
 
 **使用命令行从零建库**
 
-在 `platform/backend` 运行下面的命令。脚本按需创建角色和数据库，切换连接后自动执行同一份 `init.sql`。首次创建 `ai_dev` 时按提示设置密码。
+在 `backend` 运行下面的命令。脚本按需创建角色和数据库，切换连接后自动执行同一份 `init.sql`。首次创建 `ai_dev` 时按提示设置密码。
 
 ```powershell
 & "$pgBin\psql.exe" -X -h 127.0.0.1 -p 25432 -U postgres -d postgres -f ../infra/bootstrap-dev.psql
@@ -165,8 +165,8 @@ $pgData = Join-Path $devRoot 'postgres'
 | --- | --- |
 | PostgreSQL 启动失败 | 查看 `$devRoot\postgres.log`，用 `Get-NetTCPConnection -State Listen -LocalPort 25432` 核对端口占用 |
 | 迁移提示 schema 权限不足 | 用 `ai_dev` 连接 `ai_platform_dev`，检查数据库所有者和 `public` 的 CREATE 权限 |
-| 后端报“对模式 app 的权限不足” | 旧开发库的表归 `postgres` 所有。以 `postgres` 连接 `ai_platform_dev` 执行 [fix_owner.sql](sql/fix_owner.sql) |
+| 后端报“对模式 app 的权限不足” | 旧开发库的表归 `postgres` 所有。以 `postgres` 连接 `ai_platform_dev`，执行 `ALTER DATABASE ai_platform_dev OWNER TO ai_dev;` 和 `REASSIGN OWNED BY postgres TO ai_dev;`，再用 `ai-platform grant-runtime --role ai_dev` 补齐运行时权限 |
 | WSL 内 PONG，Windows 就绪接口返回 503 | 在 Windows 执行 `Test-NetConnection 127.0.0.1 -Port 26379`，核对 WSL 本机端口转发，再检查后端工作目录、Redis 密码及 URL 编码 |
 | API 就绪但任务一直排队 | 在后端目录启动 Worker，确认它与 API 读取同一份配置 |
 
-生产采用独立私网或托管实例、专用迁移账号和运行账号、Redis 应用 ACL，并按实例要求校验 TLS 证书。生产删除归档的位置须覆盖部署恢复的故障范围。本页步骤面向单机开发，生产备份及恢复演练按 T07 执行。[实例接入与环境隔离](../../docs/design/ai-platform-refactor.md#p1-commands)
+生产采用独立私网或托管实例、专用迁移账号和运行账号、Redis 应用 ACL，并按实例要求校验 TLS 证书。生产删除归档的位置须覆盖部署恢复的故障范围。本页步骤面向单机开发；生产部署、备份与恢复见[部署手册](deploy.md)。

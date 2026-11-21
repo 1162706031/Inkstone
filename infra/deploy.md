@@ -1,6 +1,6 @@
-# P1 部署、恢复与回退手册
+# 部署、恢复与回退手册
 
-本手册面向部署 `platform/` 的运维人员。应用 Compose 只运行反向代理（含前端静态资源）、API 和 Worker。PostgreSQL 17、Redis 7.4 和删除归档存储由运维独立提供。所有命令从 `platform/infra` 执行。此前部署演练的结果见[实施方案](../../docs/design/ai-platform-implementation-plan.md#window-3-results)。
+本手册面向平台运维人员。应用 Compose 只运行反向代理（含前端静态资源）、API 和 Worker。PostgreSQL 17、Redis 7.4 和删除归档存储由运维独立提供。所有命令从 `infra/` 执行。
 
 ## 1. 部署前准备
 
@@ -65,7 +65,7 @@ TLS_DIR=/srv/ai-platform/tls
 
 ## 3. 构建镜像
 
-镜像在 CI 或构建机上从已锁定的 `uv.lock` 和 `package-lock.json` 构建，构建上下文为 `platform/`。每次发布使用新标签，并记录镜像 ID 以便回退。
+镜像在 CI 或构建机上从已锁定的 `uv.lock` 和 `package-lock.json` 构建，构建上下文为仓库根目录。每次发布使用新标签，并记录镜像 ID 以便回退。
 
 ```sh
 APP_VERSION=p1-YYYYMMDD-<commit> $C build
