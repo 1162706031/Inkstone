@@ -1,0 +1,32 @@
+flowchart TD
+    UI[用户工作台与管理后台] --> API[FastAPI 管理与工作台 API]
+    EXT[官网后台 / ERP / 外部服务] --> OPEN[开放 API 与应用 Key 鉴权]
+    API --> SVC[应用 / 会话 / 运行服务]
+    OPEN --> SVC
+    API --> FILES[附件上传 / 校验 / 授权读取]
+    OPEN --> FILES
+    FILES --> OBJECTS[(图片与缩略图存储)]
+    SVC --> DB[(PostgreSQL 业务数据与账本)]
+    FILES --> DB
+    SVC --> CONFIG[智能体版本 / MCP与工具绑定 / 子智能体依赖解析]
+    CONFIG --> JOB[PostgreSQL 根Run任务]
+    JOB --> WORKER[Worker 租约 / 取消 / 根任务调度]
+    WORKER --> RUNTIME[LangChain / LangGraph 执行]
+    RUNTIME --> CHILD[同根执行内的子智能体]
+    RUNTIME --> GATE[受控模型对象 / 统一调用入口]
+    CHILD --> GATE
+    GATE --> RESOLVE[附件解析与供应商请求适配]
+    RESOLVE --> FILES
+    RESOLVE --> PROVIDER[供应商 / 用户自定义模型平台]
+    GATE --> DB
+    GATE --> REDIS[(Redis 限流与协调)]
+    RUNTIME --> CHECKPOINT[(PostgreSQL 图检查点)]
+    RUNTIME --> TOOL[受控业务工具 / Skills / MCP]
+    RUNTIME --> FILES
+    RUNTIME --> RAG[后续 RAG 检索]
+    WORKER --> PROJECT[业务消息 / 状态 / 事件投影]
+    PROJECT --> DB
+    PROJECT --> EVENTS[持久化运行事件]
+    EVENTS --> SSE[SSE 订阅与重连]
+    SSE --> UI
+    SSE --> EXT
